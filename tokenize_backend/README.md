@@ -1,17 +1,62 @@
-## Foundry
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Backend Summary
 
-Foundry consists of:
+This backend implements a local-only fractional real estate tokenization MVP:
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- `RealEstateToken.sol`: ERC-20 token representing property shares with a hard cap of 1,000,000 tokens and a fixed price of 0.001 ETH per token. Purchases are made via `purchaseTokens()` and respect both the total cap and a 10% per-investor limit.
 
-## Documentation
+- `ComplianceManager.sol`: Central allowlist and compliance rules. Enforces that only whitelisted addresses can receive tokens and no holder exceeds 10% of the hard cap. Also supports service-provider clawback and blacklist (only when balance is zero).
 
-https://book.getfoundry.sh/
+High-level flows supported:
+- Project creation and tokenization (deploy, set property info)
+- Allowlist management (whitelist/blacklist)
+- Investor purchases with ETH→tokens at a fixed price
+- Compliance-gated transfers (whitelist + 10% limit)
+- Service provider clawback
+
+## Architecture
+
+- Roles: The service provider holds `SERVICE_PROVIDER_ROLE` on both contracts.
+- Wiring: `RealEstateToken` references `ComplianceManager`. The manager also stores the token address for balance checks during blacklist.
+- Events and Reverts: Clear events (`PropertyInfoSet`, `TokensPurchased`, `TokensClawedBack`, `InvestorWhitelisted`, `InvestorBlacklisted`, `TransferValidated`) and revert reasons (`NotWhitelisted`, `ExceedsMaxHolding`, `CapExceeded`, `BlacklistRequiresZeroBalance`).
+
+### ComplianceManager.sol
+
+Responsibilities:
+- Maintain allowlist via `whitelistInvestor(address)` and `blacklistInvestor(address)`.
+- Enforce compliance on transfers via `validateTransfer(from,to,amount,recipientBalance)`:
+  - Recipient must be whitelisted
+  - Recipient post-transfer balance must be ≤ 10% of hard cap
+- Compute max holding with `getMaxHolding()` as 10% of 1,000,000 tokens (18 decimals).
+- Block blacklist unless the target has zero balance. Emits `InvestorWhitelisted`/`InvestorBlacklisted`.
+
+Key behaviors:
+- `validateTransfer` returns `(bool ok, string reason)`. The token contract reverts with this `reason` string when not ok.
+- `notifyClawbackReceived(from, amount)` is called by the token on clawback to emit an event. This is for analytics/visibility and doesn’t mutate balances (token transfer already happened at the token layer).
+
+### RealEstateToken.sol
+
+Token economics:
+- Hard cap: 1,000,000 tokens (18 decimals)
+- Price: 0.001 ETH per token (1e15 wei)
+- Property metadata via `setPropertyInfo(name, location, totalValue, tokenPriceWei)` and `getPropertyInfo()`.
+
+Purchases (`purchaseTokens()`):
+- Caller must be whitelisted.
+- Token amount computed using floor division by price.
+- Enforces per-investor 10% limit strictly.
+- Honors remaining hard cap: mints up to the remaining supply and refunds unused ETH.
+- Emits `TokensPurchased(buyer, amount, ethPaid)` and updates `totalRaised`.
+
+Transfers and compliance:
+- Overrides internal `_update(from,to,value)` to consult `ComplianceManager.validateTransfer` for all user transfers.
+- Skips validation only for mint, burn, and clawback-to-manager (admin action).
+- On non-compliant transfer attempts, reverts with the exact reason string returned by the manager.
+
+Admin utilities:
+- `clawbackTokens(from, amount)`: forces a transfer from any account to the manager. Emits `TokensClawedBack` and notifies the manager.
+- `mint`/`burn`: testing helpers gated by `SERVICE_PROVIDER_ROLE`.
+- `withdraw`: withdraw ETH raised to the service provider.
 
 ## Usage
 
