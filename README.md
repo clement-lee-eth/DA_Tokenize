@@ -1,4 +1,4 @@
-# 🏢 DA_Tokenize - Real Estate Tokenization Platform
+# DA_Tokenize - Real Estate Tokenization Platform POC
 
 A MVP fractional tokenized real estate platform. This POC showcases a platform enabling fractional ownership of a single commercial property
 
