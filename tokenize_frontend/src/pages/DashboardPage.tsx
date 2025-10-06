@@ -53,51 +53,53 @@ export const DashboardPage: React.FC = () => {
 
     if (role !== prevRoleRef.current) {
       if (role === 'SERVICE_PROVIDER') {
-        toast.success('Service Provider wallet connected', { duration: 3000 })
+        toast.success('Service Provider connected', { duration: 3000 })
       } else if (role === 'WHITELISTED') {
-        toast.success('Whitelisted investor wallet connected', { duration: 3000 })
+        toast.success('Whitelisted Investor connected', { duration: 3000 })
       } else if (role === 'NON_WHITELISTED') {
-        toast.error('Non-whitelisted wallet connected - Limited access', { duration: 4000 })
+        toast.error('Non-whitelisted wallet', { duration: 3500 })
       }
       prevRoleRef.current = role
     }
   }, [isConnected, address, role, roleLoading])
 
-  // Handle purchase transaction states
+  // Handle purchase transaction states (only when connected)
+  const prevPurchaseStateRef = useRef<string>('idle')
   useEffect(() => {
-    if (purchaseHash) {
-      const state = getTransactionState(purchaseHash)
-      if (state === 'initiated') {
-        toast.loading('Purchase initiated...', {
-          id: 'purchase-initiated',
-          duration: Infinity,
-        })
-      } else if (state === 'confirming') {
-        toast.loading('Confirming purchase transaction...', {
-          id: 'purchase-confirming',
-          duration: Infinity,
-        })
-      }
+    if (!purchaseHash || !isConnected) {
+      prevPurchaseStateRef.current = 'idle'
+      return
     }
-  }, [purchaseHash, getTransactionState])
-
-  // Drive purchase toasts and instant refetch based on tx state (mirrors whitelist speed)
-  useEffect(() => {
-    if (!purchaseHash) return
+    
     const state = getTransactionState(purchaseHash)
+    
+    // Only trigger toasts on actual state changes, not on component remount
+    if (state === prevPurchaseStateRef.current) return
+    prevPurchaseStateRef.current = state
+    
     if (state === 'initiated') {
       toast.loading('Purchase initiated...', { id: 'purchase-initiated', duration: Infinity })
     } else if (state === 'confirming') {
-      toast.loading('Confirming purchase transaction...', { id: 'purchase-confirming', duration: Infinity })
+      toast.loading('Confirming purchase...', { id: 'purchase-confirming', duration: Infinity })
     } else if (state === 'success') {
       toast.dismiss('purchase-initiated')
       toast.dismiss('purchase-confirming')
-      toast.success('Purchase confirmed!', { id: 'purchase-success', duration: 3500 })
+      toast.success('Purchase complete!', { id: 'purchase-success', duration: 3500 })
       // Instant refetch to update totals/balances without refresh
       refetchTokenData()
       refetchTokenBalance()
     }
-  }, [purchaseHash, getTransactionState])
+  }, [purchaseHash, getTransactionState, isConnected])
+
+  // Clean up toasts on disconnect/wallet change
+  useEffect(() => {
+    if (!isConnected || !address) {
+      toast.dismiss('purchase-initiated')
+      toast.dismiss('purchase-confirming')
+      toast.dismiss('purchase-success')
+      prevPurchaseStateRef.current = 'idle'
+    }
+  }, [isConnected, address])
 
   // Refetch when account changes
   useEffect(() => {
@@ -388,14 +390,19 @@ export const DashboardPage: React.FC = () => {
                               await purchaseTokens(ethAmount, () => {
                                 toast.dismiss('purchase-initiated')
                                 toast.dismiss('purchase-confirming')
-                                toast.success(`Successfully purchased ${qtyNow.toLocaleString()} MBST tokens!`, { id: 'purchase-success', duration: 4000 })
+                                toast.success(`Purchased ${qtyNow.toLocaleString()} MBST!`, { id: 'purchase-success', duration: 3500 })
                                 refetchTokenData()
                                 refetchTokenBalance()
                               })
                             } catch (error: any) {
                               toast.dismiss('purchase-initiated')
                               toast.dismiss('purchase-confirming')
-                              toast.error((error?.message || 'Purchase failed') as string, { id: 'purchase-error', duration: 5000 })
+                              let msg = (error?.message || 'Purchase failed') as string
+                          // Shorten long messages
+                          if (msg.includes('purchaseTokens')) msg = 'Transaction reverted'
+                          if (msg.includes('The contract function')) msg = 'Transaction failed'
+                          if (msg.length > 50) msg = msg.substring(0, 47) + '...'
+                          toast.error(msg, { id: 'purchase-error', duration: 4000 })
                             }
                           }}
                           disabled={isBusy || !mbstInput || Number(mbstInput.replace(/,/g, '')) <= 0}
