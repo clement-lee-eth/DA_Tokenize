@@ -10,9 +10,7 @@ A MVP fractional tokenized real estate platform. This POC showcases a platform e
 
 ## 🎥 Video Demo
 
-[📹 Watch the full demo on Loom](#)
-
-_Link will be added after recording_
+https://www.loom.com/share/2e400b70ae834f759ed55ddf3ee76be2?sid=51e313e4-4a3e-447a-9787-e1306109b6f0
 
 ---
 
