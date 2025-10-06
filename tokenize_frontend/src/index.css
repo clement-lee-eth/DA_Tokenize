@@ -10,3 +10,74 @@ body { @apply bg-neutral-100 text-neutral-900 antialiased; font-family: 'Inter',
 .card { @apply bg-white/90 backdrop-blur border rounded-md shadow-sm; }
 .card-title { @apply text-lg font-semibold text-neutral-900; }
 .badge { @apply inline-flex items-center gap-1 rounded-full border bg-neutral-100 px-2 py-0.5 text-xs text-neutral-900; }
+
+/* Toast animations for seamless floating experience */
+@keyframes toast-slide-up {
+  from {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Custom toast container positioning - ensure it doesn't affect layout */
+.go3958317564 {
+  position: fixed !important;
+  bottom: 1rem !important;
+  right: 1rem !important;
+  z-index: 9999 !important;
+  pointer-events: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  transform: translateZ(0) !important;
+  will-change: transform !important;
+}
+
+.go3958317564 > * {
+  pointer-events: auto;
+  animation: toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin: 0 !important;
+}
+
+.go3958317564 > *[data-removed="true"] {
+  animation: toast-slide-down 0.3s cubic-bezier(0.4, 0, 1, 1) !important;
+}
+
+/* Ensure main content doesn't get affected by toast positioning */
+body {
+  overflow-x: hidden;
+}
+
+/* Make sure toast doesn't interfere with page layout */
+[data-sonner-toaster] {
+  position: fixed !important;
+  bottom: 1rem !important;
+  right: 1rem !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translateZ(0) !important;
+  will-change: transform !important;
+}
+
+[data-sonner-toast] {
+  pointer-events: auto !important;
+  margin: 0 !important;
+}

@@ -43,10 +43,12 @@ export function useRole() {
     if (!isConnected || !address) return 'DISCONNECTED'
     if (hasRole.data) return 'SERVICE_PROVIDER'
     if (isWhitelisted.data) return 'WHITELISTED'
-    return 'NON_WHITELISTED'
+    // If we have data but user is not whitelisted and not service provider, they are non-whitelisted
+    if (isWhitelisted.data === false && hasRole.data === false) return 'NON_WHITELISTED'
+    return 'NON_WHITELISTED' // Default to non-whitelisted if we can't determine
   }, [isConnected, address, hasRole.data, isWhitelisted.data])
 
-  const isLoading = enabled && (!managerAbi || serviceProviderRole.isLoading || hasRole.isLoading || isWhitelisted.isLoading)
+  const isLoading = enabled && (!managerAbi || serviceProviderRole.isLoading || (hasRole.isLoading && isWhitelisted.isLoading))
   const error = serviceProviderRole.error || hasRole.error || isWhitelisted.error
 
   return { role, isLoading, error }
