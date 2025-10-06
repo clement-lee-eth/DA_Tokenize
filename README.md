@@ -30,7 +30,7 @@ _Link will be added after recording_
 - 💰 **Compliant Token Sales**: 10% holding limit enforcement, whitelist requirements, hard cap management
 - 🎯 **Admin Operations**: Whitelist/blacklist management, token clawback, investor oversight
 - 📊 **Real-Time Updates**: Event-driven UI updates via contract events (no manual refresh)
-- 🎨 **Institutional Design**: Schroders-themed interface with professional UX and modern toast notifications
+- 🎨 **Institutional Design**: Interface with proper UX and modern toast notifications
 - ⚡ **Instant Feedback**: Multi-stage loading states with spinners and transaction confirmation toasts
 
 ---
@@ -81,7 +81,7 @@ _Link will be added after recording_
 - Vite (build tool)
 - Wagmi v2 + viem (Ethereum interactions)
 - RainbowKit (wallet connection)
-- Tailwind CSS (Schroders-themed styling)
+- Tailwind CSS (frontend styling)
 - react-hot-toast (notifications)
 
 ---
