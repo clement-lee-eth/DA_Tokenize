@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { @apply bg-neutral-100 text-neutral-900 antialiased; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; }
+.container { @apply max-w-6xl mx-auto px-4; }
+
+/* subtle card polish */
+.card { @apply bg-white/90 backdrop-blur border rounded-md shadow-sm; }
+.card-title { @apply text-lg font-semibold text-neutral-900; }
+.badge { @apply inline-flex items-center gap-1 rounded-full border bg-neutral-100 px-2 py-0.5 text-xs text-neutral-900; }
