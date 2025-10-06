@@ -185,7 +185,8 @@ contract RealEstateToken is ERC20, AccessControl, ReentrancyGuard {
         // Skip validation for minting, burning, and explicit clawback transfers to manager
         bool isMint = from == address(0);
         bool isBurn = to == address(0);
-        bool isClawbackToManager = (to == address(complianceManager)) && hasRole(SERVICE_PROVIDER_ROLE, msg.sender);
+        // Consider any transfer to the ComplianceManager as an admin clawback (already gated in clawbackTokens)
+        bool isClawbackToManager = (to == address(complianceManager));
         if (isMint || isBurn || isClawbackToManager) {
             super._update(from, to, value);
             emit TransferValidated(from, to, value, true);

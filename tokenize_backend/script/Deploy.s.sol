@@ -14,6 +14,11 @@ contract Deploy is Script {
     function run() external {
         // Load broadcaster private key from env (SERVICE_PROVIDER_PK)
         uint256 deployerKey = vm.envUint("SERVICE_PROVIDER_PK");
+        address deployerAddr = vm.addr(deployerKey);
+        // Optional: UI wallet to grant role to (if different from deployer)
+        // Provide UI_WALLET in your .env to auto-grant
+        address uiWallet;
+        try vm.envAddress("UI_WALLET") returns (address a) { uiWallet = a; } catch { uiWallet = address(0); }
 
         vm.startBroadcast(deployerKey);
 
@@ -22,8 +27,8 @@ contract Deploy is Script {
 
         // 2) Deploy RealEstateToken pointing at the manager
         RealEstateToken token = new RealEstateToken(
-            "Real Estate Token",
-            "RET",
+            "MBS Token",
+            "MBST",
             address(manager)
         );
 
@@ -33,16 +38,27 @@ contract Deploy is Script {
         // 4) Set property info (customize as needed)
         // name, location, totalValue (arbitrary units), tokenPrice (wei)
         token.setPropertyInfo(
-            "One Market Plaza",
-            "San Francisco, CA",
-            200_000_000,
+            "Marina Bay Sands",
+            "Singapore, SG",
+            10_000_000,
             0.001 ether
         );
+
+        // 5) Ensure roles are set for deployer and UI wallet
+        bytes32 spRole = keccak256("SERVICE_PROVIDER_ROLE");
+        if (!manager.hasRole(spRole, deployerAddr)) {
+            manager.grantRole(spRole, deployerAddr);
+        }
+        if (uiWallet != address(0) && !manager.hasRole(spRole, uiWallet)) {
+            manager.grantRole(spRole, uiWallet);
+        }
 
         vm.stopBroadcast();
 
         console2.log("ComplianceManager:", address(manager));
         console2.log("RealEstateToken:", address(token));
+        console2.log("Service provider (deployer):", deployerAddr);
+        if (uiWallet != address(0)) console2.log("Service provider (UI):", uiWallet);
     }
 }
 
